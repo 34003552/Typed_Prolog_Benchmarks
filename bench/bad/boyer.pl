@@ -16,16 +16,35 @@
 :- ensure_loaded(harness).
 
 :- type w_bool ---> 't' ; 'f' ;
-	lessp(w_int, w_int) ; lessp(w_bool, w_bool) ; boyer_member(any, any) ; not(w_bool) ; and(w_bool, w_bool) ; or(w_bool, w_bool) ; zerop(w_int) ; equal(w_int, w_int) ; equal(w_bool, w_bool) ;
-	eqp(w_int, w_int) ; numberp(w_int) ; nlistp(any) ; divides(w_int, w_int) ; assignedp(any, any) ; listp(any) ; if(w_bool, w_bool, w_bool) ; 
-	if(w_bool, w_bool, w_bool, w_bool) ; iff(w_bool, w_bool) ; implies(w_bool, w_bool) ; prime(w_int) ; prime1(w_int, w_int) ; prime_list(any) ; and(w_bool).
- :- type w_int ---> w_bool ; zero ; i(integer) ;
-	lessp(w_bool, w_bool) ; if(w_bool, w_int, w_int) ;
-	count_list(any, any) ; plus(w_int, w_int) ; fix(w_int) ; boyer_difference(w_int, w_int) ; add1(w_int) ; times(w_int, w_int) ; append(w_int, w_int) ; flatten(any) ;
-	greatest_factor(w_int, w_int) ; exp(any, w_int) ; gcd(w_int, w_int) ; length(any) ; remainder(w_int, w_int) ; cons(any, any) ; quotient(w_int, w_int) ;
-	meaning(any, any) ; power_eval(any, any) ; reverse(w_int) ; reverse_loop(any, list(any)) ; decr(w_int).
+	and(w_bool) ; and(w_bool, w_bool) ; assignedp(any, any) ; 
+	divides(w_int, w_int) ;
+	eqp(w_int, w_int) ; equal(w_int, w_int) ; equal(w_bool, w_bool) ;
+	f(any) ;
+	if(w_bool, w_bool, w_bool) ; if(w_bool, w_bool, w_bool, w_bool) ; iff(w_bool, w_bool) ; implies(w_bool, w_bool) ;
+	lessp(w_bool, w_bool) ; lessp(w_int, w_int) ; listp(any) ; 
+	boyer_member(w_int, w_int) ;
+	nlistp(any) ; not(w_bool) ; numberp(w_int) ; 
+	or(w_bool, w_bool) ; 
+	prime(w_int) ; prime1(w_int, w_int) ; prime_list(any) ;
+	zerop(w_int).
+ :- type w_int ---> w_bool ; zero ; [] ; i(integer) ;
+	add1(w_int) ; append(w_int, w_int) ; 
+	cons(any, any) ; count_list(any, any) ;
+	decr(w_int) ; delete(w_int, w_int) ; boyer_difference(w_int, w_int) ;
+	exp(any, w_int) ;
+	fix(w_int) ; flatten(any) ;
+	gcd(w_int, w_int) ; greatest_factor(w_int, w_int) ; 
+	if(w_bool, w_int, w_int) ; intersect(w_int, w_int) ;
+	length(w_int) ; lessp(w_bool, w_bool) ; 
+	meaning(w_int, w_int) ;
+	nth(w_int, w_int) ;
+	plus(w_int, w_int) ; plus_fringe(w_int) ; plus_tree(w_int) ; power_eval(any, any) ;
+	quotient(w_int, w_int) ;
+	sort2(w_int) ;
+	times(w_int, w_int) ; times_list(w_int) ;
+	remainder(w_int, w_int) ; reverse(w_int) ; reverse_loop(any, list(any)).
 
-:- type equal_t0 ---> to_equal_t0(unk_t0) ;
+:- type equal_t0 ---> to_equal_t0(w_bool) ;
 	and(w_bool, w_bool) ; append(w_int, w_int) ; assignment(any, any) ; assume_false(any, any) ; assume_true(any, any) ;
 	boolean(w_int) ;
 	car(any) ; compile(any) ; count_list(any, any) ; countps_(any, any) ;
@@ -34,46 +53,44 @@
 	fact_(any) ; falsify(any) ; fix(any) ; flatten(any) ;
 	gcd(w_int, w_int) ; get(w_int, any) ; greatereqp(any, any) ; greatereqpr(any, any) ; greaterp(any, any) ;
 	if(w_bool, any, any) ; iff(w_bool, w_bool) ; implies(w_bool, w_bool) ;
-	last(any) ; length(any) ; lesseqp(any, any) ; lessp(w_int, w_int) ; listp(any) ;
-	mc_flatten(any, w_int) ; meaning(any, any) ; boyer_member(any, any) ;
-	not(w_bool) ; nth(any, any) ; numberp(w_int) ;
+	last(any) ; length(w_int) ; lesseqp(any, any) ; lessp(w_int, w_int) ; listp(any) ;
+	mc_flatten(any, w_int) ; meaning(w_int, w_int) ; boyer_member(w_int, w_int) ;
+	not(w_bool) ; nth(w_int, w_int) ; numberp(w_int) ;
 	or(w_bool, w_bool) ;
 	plus(w_int, w_int) ; power_eval(any, any) ; prime(w_int) ; prime_list(any) ;
 	quotient(w_int, w_int) ;
 	remainder(w_int, w_int) ; reverse_(any) ; reverse(w_int) ; reverse_loop(any, list(any)) ;
-	samefringe(any, any) ; sigma(any, any) ; sort2(any) ;
+	samefringe(any, any) ; sigma(w_int, w_int) ; sort2(w_int) ;
 	tautology_checker(any) ; times(w_int, w_int) ; times_list(any) ;
 	value(any, any) ;
 	zerop(w_int).
 
-:- type equal_t1 ---> to_equal_t1(w_int) ; to_equal_t1(w_bool) ; to_equal_t1(unk_t0) ;
+:- type equal_t1 ---> to_equal_t1(w_int) ; to_equal_t1(w_bool) ;
 	append(w_int, w_int) ; assignedp(any, any) ; and(w_bool, w_bool) ;
 	cons(any, any) ; count_list(any, any) ; countps_loop(any, any, any) ;
-	delete(any, any) ; 
+	delete(w_int, w_int) ; 
 	equal(w_int, w_int) ; exec(any, any, any) ;
 	fact_loop(any, integer) ; falsify1(any, any) ;
-	if(w_bool, w_int, w_int) ; if(w_bool, w_bool, w_bool) ; if(w_bool, w_bool, w_bool, w_bool) ; if(w_bool, w_bool, w_int, w_int) ;
-	listp(any) ; lessp(any, any) ;
+	if(w_bool, w_int, w_int) ; if(w_bool, w_bool, w_bool) ; if(w_bool, w_bool, w_bool, w_bool) ; if(w_bool, w_bool, w_int, w_int) ; intersect(w_int, w_int) ;
+	listp(any) ; lessp(w_bool, w_bool) ; lessp(w_int, w_int) ;
 	not(any) ;
 	or(w_bool, w_bool) ;
 	plus(w_int, w_int) ;
-	quotient(any, any) ;
+	quotient(w_int, w_int) ;
 	reverse(any) ; reverse_loop(any, list(any)) ;
 	sort2(any) ;
-	tautologyp(any, any) ; times(any, any) ;
+	tautologyp(any, any) ; times(w_int, w_int) ;
 	value(any, any) ;
 	zerop(w_int).
 
-:- type unk_t0 ---> 't' ; 'f' ; if(unk_t0, unk_t0, unk_t0).
+:- trust_pred atomic(w_bool).
 
-:- trust_pred atomic(unk_t0).
-
-:- pred benchmark(unk_t0, unk_t0).
+:- pred benchmark(w_bool, w_bool).
 benchmark(Wff, NewWff) :-
 	rewrite(Wff,NewWff),
 	tautology(NewWff,[],[]).
 
-:- pred data(any, any).
+:- pred data(w_bool).
 data(implies(and(implies(X,Y),
                 and(implies(Y,Z),
                     and(implies(Z,U),
@@ -85,14 +102,14 @@ data(implies(and(implies(X,Y),
         U = equal(plus(a,b),boyer_difference(x,y)),
         W = lessp(remainder(a,b),boyer_member(a,length(b))).
 
-:- pred tautology(unk_t0).
+:- pred tautology(w_bool).
 tautology(Wff) :-
 %        write('rewriting...'),nl,
         rewrite(Wff,NewWff),
 %        write('proving...'),nl,
         tautology(NewWff,[],[]).
 
-:- pred tautology(unk_t0, list(unk_t0), list(unk_t0)).
+:- pred tautology(w_bool, list(w_bool), list(w_bool)).
 tautology(Wff,Tlist,Flist) :-
         (truep(Wff,Tlist) -> true
         ;falsep(Wff,Flist) -> fail
@@ -104,7 +121,7 @@ tautology(Wff,Tlist,Flist) :-
                 )
         ),!.
 
-:- pred rewrite(unk_t0, unk_t0).
+:- pred rewrite(w_bool, w_bool).
 rewrite(Atom,Atom) :-
         atomic(Atom),!.
 rewrite(Old,New) :-
@@ -116,7 +133,7 @@ rewrite(Old,New) :-
         ; New=Mid
         ),!.
 
-:- pred rewrite_args(integer, unk_t0, unk_t0).
+:- pred rewrite_args(integer, w_bool, w_bool).
 rewrite_args(0,_,_) :- !.
 rewrite_args(N,Old,Mid) :- 
         arg(N,Old,OldArg),
@@ -125,15 +142,15 @@ rewrite_args(N,Old,Mid) :-
         N1 is N-1,
         rewrite_args(N1,Old,Mid).
 
-:- pred truep(unk_t0, list(unk_t0)).
+:- pred truep(w_bool, list(w_bool)).
 truep(t,_) :- !.
 truep(Wff,Tlist) :- boyer_member(Wff,Tlist).
 
-:- pred falsep(unk_t0, list(unk_t0)).
+:- pred falsep(w_bool, list(w_bool)).
 falsep(f,_) :- !.
 falsep(Wff,Flist) :- boyer_member(Wff,Flist).
 
-:- pred boyer_member(unk_t0, list(unk_t0)).
+:- pred boyer_member(w_bool, list(w_bool)).
 boyer_member(X,[X|_]) :- !.
 boyer_member(X,[_|T]) :- boyer_member(X,T).
 
@@ -380,7 +397,7 @@ exp(I, times(J,K), exp(exp(I,J),K)).
 gcd(X, Y, gcd(Y,X)) :- !.
 gcd(times(X,Z), times(Y,Z), times(Z,gcd(X,Y))).
 
-:- pred mylength(any, w_int).
+:- pred mylength(w_int, w_int).
 mylength(reverse(X),length(X)).
 mylength(cons(_,cons(_,cons(_,cons(_,cons(_,cons(_,X7)))))),
          plus(i(6),length(X7))).
@@ -399,7 +416,7 @@ lessp(times(X,Z), times(Y,Z), and(not(zerop(Z)),
 lessp(Y, plus(X,Y), not(zerop(X))) :- !.
 lessp(length(delete(X,L)), length(L), boyer_member(X,L)).
 
-:- pred meaning(any, any, w_int).
+:- pred meaning(w_int, w_int, w_int).
 meaning(plus_tree(append(X,Y)),A,
         plus(meaning(plus_tree(X),A),
              meaning(plus_tree(Y),A))) :- !.
@@ -411,12 +428,12 @@ meaning(plus_tree(delete(X,Y)),A,
                       meaning(X,A)),
            meaning(plus_tree(Y),A))).
 
-:- pred myboyer_member(any, any, w_bool).
+:- pred myboyer_member(w_int, w_int, w_bool).
 myboyer_member(X,append(A,B),or(boyer_member(X,A),boyer_member(X,B))) :- !.
 myboyer_member(X,reverse(Y),boyer_member(X,Y)) :- !.
 myboyer_member(A,intersect(B,C),and(boyer_member(A,B),boyer_member(A,C))).
 
-:- pred nth(any, any, any).
+:- pred nth(w_int, w_int, w_int).
 nth(zero,_,zero).
 nth([],I,if(zerop(I),[],zero)).
 nth(append(A,B),I,append(nth(A,I),nth(B,boyer_difference(I,length(A))))).
