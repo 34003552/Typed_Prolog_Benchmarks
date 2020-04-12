@@ -12,26 +12,29 @@
 :- ensure_loaded(harness).
 
 :- type empty.
-:- type clause ---> (any :- any).
+:- type clause_head ---> a(any, any, any).
+:- type clause_body --->  to_clause_body((b(any) ; c(any))) ; (clause_body, clause_body) ; \+(any) ; \=(any,any) ; not(any) ; to_clause_body(any) ;
+	to_clause_body((clause_body ; clause_body)) ; to_clause_body((any -> any ; any)) ;
+	to_clause_body(((any=any,!,fail);true)) ; to_clause_body(((any,!,fail);true)) ; to_clause_body(((any,!,any);true)).
+:- type clause ---> (clause_head :- clause_body).
 :- type list(integer) ---> "A".
-:- type unk_t0 ---> any ; [unk_t0 | unk_t0] ; to_unk_t0(any) ; to_unk_t0((any;any)).
-:- type disj_t ---> disj(unk_t0, integer, any, unk_t0) ; disj(unk_t0, integer, any, clause).
-:- type unk_t1 ---> any ; '_dummy_'.
-:- type unk_t2 ---> any ; (any :- any) ; (list(clause), list(clause)).
-:- type unk_t3 ---> any ; p(unk_t1, clause) ; p(unk_t2, clause).
+:- type variable ---> '_dummy_' ; to_variable(term_t0).
+:- type term_t0 ---> [term_t0 | term_t0] ; to_term_t0(any) ; to_term_t0((clause_body;clause_body)).
+:- type term_t1 ---> (list(clause), list(clause)) ; to_term_t1(clause).
+:- type symbol_table ---> [] ; [p(variable, any) | symbol_table] ; [p(term_t1, term_t1) | symbol_table].
+:- type disj_t ---> disj(clause_body, integer, clause_body, term_t0) ; disj(clause_body, integer, clause_head, clause).
 
-:- trust_pred =..(unk_t0,any).
-:- trust_pred atomic(unk_t0).
-:- trust_pred name(unk_t1, any).
-:- trust_pred append(any, any, any).
-:- trust_pred sort(list(unk_t1), list(unk_t1)).
+:- trust_pred atomic(term_t0).
+:- trust_pred name(variable, list(integer)).
+:- trust_pred append(list(integer), list(integer), list(integer)).
+:- trust_pred sort(list(variable), list(variable)).
 
 :- pred data(empty).
 data(_).
 
 :- pred benchmark(empty, empty).
 benchmark(_Data, _Out) :-
-	eliminate_disjunctions([(a(A,_,C):-(b(A);c(C)))],X,Y,[]),
+	eliminate_disjunctions([(a(A,_,C):-to_clause_body((b(A);c(C))))],X,Y,[]),
     inst_vars((X,Y)).
 
 :- pred eliminate_disjunctions(list(clause), list(clause), list(clause), list(clause)).
@@ -60,24 +63,23 @@ extract_disj(C, (Head:-NewBody), Disj, Link) :-
 	extract_disj(Body, NewBody, Disj, Link, C, CtrIn, _CtrOut).
 extract_disj(Head, Head, Link, Link).
 
-:- pred extract_disj(any, any, list(disj_t), list(disj_t), clause, integer, integer).
+:- pred extract_disj(clause_body, clause_body, list(disj_t), list(disj_t), clause, integer, integer).
 extract_disj((C1,C2), (NewC1,NewC2), Disj, Link, C, CtrIn, CtrOut) :-
 	extract_disj(C1, NewC1, Disj, Link1, C, CtrIn, Ctr),
 	extract_disj(C2, NewC2, Link1, Link, C, Ctr, CtrOut).
 
-%:- pred extract_disj(any, any, any, any, any, any, any).
 extract_disj(Goal, X, Disj, Link, C, CtrIn, CtrOut) :-
 	is_disj(Goal,NewGoal), !,
 	Disj = [disj(NewGoal,CtrIn,X,C)|Link],
 	CtrOut is CtrIn + 1.
 extract_disj(Goal, Goal, Link, Link, _, CtrIn, CtrIn).
 
-:- pred is_disj(any, any).
-is_disj(((C1 -> C2); C3),((C1, !, C2); C3)) :- !.
-is_disj((C1;C2),(C1;C2)).
-is_disj(not(C),((C,!,fail);true)).
-is_disj(\+(C),((C,!,fail);true)).
-is_disj('\\='(C1,C2),((C1 = C2,!,fail);true)).
+:- pred is_disj(clause_body, clause_body).
+is_disj(to_clause_body(((C1 -> C2); C3)),to_clause_body(((C1, !, C2); C3))) :- !.
+is_disj(to_clause_body((C1;C2)),to_clause_body((C1;C2))).
+is_disj(not(C),to_clause_body(((C,!,fail);true))).
+is_disj(\+(C),to_clause_body(((C,!,fail);true))).
+is_disj('\\='(C1,C2),to_clause_body(((C1 = C2,!,fail);true))).
 
 % given a list of disj((A;B),N,X,C), for each, do the following:
 % 1) find vars in (A;B)
@@ -89,42 +91,42 @@ is_disj('\\='(C1,C2),((C1 = C2,!,fail);true)).
 % 7) add new clauses [(dummy:-A)),(dummy:-B))]
 :- pred treat_disj(list(disj_t), list(clause), list(clause)).
 treat_disj([], Link, Link).
-treat_disj([disj((A;B),N,X,C)|Disjs], DummyClauses, Link) :-
-	find_vars(to_unk_t0((A;B)),Vars),
+treat_disj([disj(to_clause_body((A;B)),N,X,C)|Disjs], DummyClauses, Link) :-
+	find_vars(to_term_t0((A;B)),Vars),
 	find_vars(C,CVars),
 	intersect_vars(Vars,CVars,Args),
 	make_dummy_name(N,Name),
-	X =.. [Name|Args],
-	make_dummy_clauses((A;B),X,DummyClauses,Rest),
+	(X =.. [Name|Args])::(clause_head =.. list(variable)),
+	make_dummy_clauses(to_clause_body((A;B)),X,DummyClauses,Rest),
 	treat_disj(Disjs, Rest, Link).
 
-:- pred make_dummy_clauses(any, unk_t0, list(clause), list(clause)).
-make_dummy_clauses((A;B),to_unk_t0(X),[NewC|Cs],Link) :- 
+:- pred make_dummy_clauses(clause_body, clause_head, list(clause), list(clause)).
+make_dummy_clauses(to_clause_body((A;B)),X,[NewC|Cs],Link) :- 
 	!,
-	copy((X:-A), NewC),
-	make_dummy_clauses(B,to_unk_t0(X),Cs,Link).
-make_dummy_clauses(A,to_unk_t0(X),[NewC|Link],Link) :- copy((X:-A),NewC).
+	copy(to_term_t1((X:-A)), to_term_t1(NewC)),
+	make_dummy_clauses(B,X,Cs,Link).
+make_dummy_clauses(A,X,[NewC|Link],Link) :- copy(to_term_t1((X:-A)),to_term_t1(NewC)).
 
-:- pred find_vars(unk_t0, list(unk_t0)).
+:- pred find_vars(term_t0, list(variable)).
 find_vars(X,Y) :- find_vars(X,Y,Link), Link = [].
 
-:-pred find_vars(unk_t0, list(unk_t0), list(unk_t0)).
-find_vars(Var,[Var|Link],Link) :- var(Var), !.
+:-pred find_vars(term_t0, list(variable), list(variable)). % consider revising typeof(Link)!
+find_vars(Var,[to_variable(Var)|Link],Link) :- var(Var), !.
 find_vars(Cst,Link,Link) :- atomic(Cst), !.
 find_vars([T|Ts],Vars,NewLink) :- !,
 	find_vars(T,Vars,Link),
 	find_vars(Ts,Link,NewLink).
 find_vars(Term,Vars,Link) :-
-	Term =.. [_|Args],
+	(Term =.. [_|Args])::(term_t0 =.. any),
 	find_vars(Args,Vars,Link).
 
-:- pred intersect_vars(list(unk_t0), list(unk_t0), list(unk_t0)).
+:- pred intersect_vars(list(variable), list(variable), list(variable)).
 intersect_vars(V1,V2,Out) :-
 	sort_vars(V1,Sorted1),
 	sort_vars(V2,Sorted2),
 	intersect_sorted_vars(Sorted1,Sorted2,Out).
 
-:- pred make_dummy_name(unk_t1, unk_t1).
+:- pred make_dummy_name(variable, variable).
 make_dummy_name(N,Name) :-
 	name('_dummy_',L1),
 	name(N,L2),
@@ -132,19 +134,19 @@ make_dummy_name(N,Name) :-
 	name(Name,L).
 
 % copy_term using a symbol table.
-:- pred copy(unk_t2, clause).
+:- pred copy(term_t1, term_t1).
 copy(Term1, Term2) :-
         varset(Term1, Set), make_sym(Set, Sym),
         copy2(Term1, Term2, Sym), !.
 
-:- pred copy2(unk_t2, clause, list(unk_t3)).
+:- pred copy2(term_t1, term_t1, symbol_table).
 copy2(V1, V2, Sym) :- var(V1), !, retrieve_sym(V1, Sym, V2).
 copy2(X1, X2, Sym) :- nonvar(X1), !,
         functor(X1,Name,Arity),
         functor(X2,Name,Arity),
         copy2(X1, X2, Sym, 1, Arity).
 
-:- pred copy2(unk_t2, clause, list(unk_t3), integer, integer).
+:- pred copy2(term_t1, term_t1, symbol_table, integer, integer).
 copy2(_X1,_X2,_Sym, N, Arity) :- N>Arity, !.
 copy2(X1, X2, Sym, N, Arity) :- N=<Arity, !,
         arg(N, X1, Arg1),
@@ -153,58 +155,57 @@ copy2(X1, X2, Sym, N, Arity) :- N=<Arity, !,
         N1 is N+1,
         copy2(X1, X2, Sym, N1, Arity).
 
-:- pred retrieve_sym(unk_t2, list(unk_t3), clause).
+:- pred retrieve_sym(term_t1, symbol_table, term_t1).
 retrieve_sym(V, [p(W,X)|_Sym], X) :- V==W, !.
 retrieve_sym(V, [_|Sym], X) :- retrieve_sym(V, Sym, X).
 
-:- pred make_sym(list(unk_t1), list(unk_t3)).
+:- pred make_sym(list(variable), symbol_table).
 make_sym([], []).
 make_sym([V|L], [p(V,_)|S]) :- make_sym(L, S).
 
 % *** Gather all variables used in a term: (in a set or a bag)
-:- pred varset(unk_t2, list(unk_t1)).
+:- pred varset(term_t1, list(variable)).
 varset(Term, VarSet) :- varbag(Term, VB), 
     sort(VB, VarSet).
 
-:- pred varbag(unk_t2, list(unk_t1)).
+:- pred varbag(term_t1, list(variable)).
 varbag(Term, VarBag) :- varbag(Term, VarBag, []).
 
-%:- pred varbag(any).
-:- pred varbag(unk_t2, list(unk_t1), list(any)).
+:- pred varbag(term_t1, list(variable), list(any)).
 varbag(Var) --> {var(Var)}, !, [Var].
 varbag(Str) --> {nonvar(Str), !, functor(Str,_,Arity)}, varbag(Str, 1, Arity).
 
-%:- pred varbag(any, integer, integer).
+:- pred varbag(term_t1, integer, integer, list(variable), list(any)). % unchecked!
 varbag(_Str, N, Arity) --> {N>Arity}, !.
 varbag(Str, N, Arity) --> {N=<Arity}, !,
         {arg(N, Str, Arg)}, varbag(Arg),
         {N1 is N+1},
         varbag(Str, N1, Arity).
 
-:- pred inst_vars(unk_t2).
+:- pred inst_vars(term_t1).
 inst_vars(Term) :-
 	varset(Term, Vars),
         [A]="A",
 	inst_vars_list(Vars, A).
 
-:- pred inst_vars_list(list(unk_t1), integer).
+:- pred inst_vars_list(list(variable), integer).
 inst_vars_list([], _).
 inst_vars_list([T|L], N) :-
 	name(T, [N]),
 	N1 is N+1,
 	inst_vars_list(L, N1).
 
-:- pred sort_vars(list(unk_t0), list(unk_t0)).
+:- pred sort_vars(list(variable), list(variable)).
 sort_vars(V,Out) :- sort_vars(V,Out,[]).
 
-:- pred sort_vars(list(unk_t0), list(unk_t0), list(unk_t0)).
+:- pred sort_vars(list(variable), list(variable), list(variable)).
 sort_vars([],Link,Link).
 sort_vars([V|Vs],Result,Link) :-
 	split_vars(Vs,V,Smaller,Bigger),
 	sort_vars(Smaller,Result,[V|SLink]),
 	sort_vars(Bigger,SLink,Link).
 
-:- pred intersect_sorted_vars(list(unk_t0), list(unk_t0), list(unk_t0)).
+:- pred intersect_sorted_vars(list(variable), list(variable), list(variable)).
 intersect_sorted_vars([],_,[]) :- !.
 intersect_sorted_vars(_,[],[]).
 intersect_sorted_vars([X|Xs],[Y|Ys],[X|Rs]) :-
@@ -217,7 +218,7 @@ intersect_sorted_vars([X|Xs],[Y|Ys],Rs) :-
 	X @> Y, !,
 	intersect_sorted_vars([X|Xs],Ys,Rs).
 
-:- pred split_vars(list(unk_t0), unk_t0, list(unk_t0), list(unk_t0)).
+:- pred split_vars(list(variable), variable, list(variable), list(variable)).
 split_vars([],_,[],[]).
 split_vars([V|Vs],A,[V|Ss],Bs) :-
 	V @< A, !,

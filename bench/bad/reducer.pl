@@ -7,17 +7,21 @@
 % as facts of the form t_def(_func, _args, _expr).
 % Written by Peter Van Roy
 
+:- style_check(-singleton).
+:- use_module(type_check).
+%:- style_check(+singleton).
+
 :- ensure_loaded(harness).
 
-:- style_check(-singleton).
-
-:- type unk0_t ---> i ; i(integer) ; 'true' ; 'false' ; [any | '.'] ; [any, any | '.'] ; cond(any, integer, any) ; cond(any, list(any), any) ; append(any, any) ; to_unk0_t(any) ; to_unk0_t(unk3_t).
+:- type unk0_t ---> i ; i(integer) ; 'true' ; 'false' ; [any | '.'] ; [any, any | '.'] ; cond(any, integer, any) ; cond(any, list(any), any) ; append(any, any) ;
+	to_unk0_t(any) ; to_unk0_t(unk3_t).
 :- type operator ---> '+' ; '-' ; '*' ; '//' ; 'mod' ; '-' ; '<' ; '>' ; '=<' ; '>=' ; '=\\=' ; '=:='.
 :- type unk1_t ---> 'fac' ; 'quick' ; 'quick2' ; 'split' ; 'inserthead' ; 'inserttail' ; 'append' ; to_unk1_t(unk3_t).
 :- type unk2_t ---> 'sp' ; 'bp' ; 'cp' ; 's' ; 'b' ; 'c' ; 'k' ; 'i' ; 'cond' ; 'apply' ; 'hd' ; 'tl'.
 :- type unk3_t ---> [] ; [any | unk2_t] ; [any, any | unk2_t] ; [any, any, any | unk2_t] ; to_unk3_t(unk0_t) ; to_unk3_t(operator).
-%:- type beta_t ---> any ; [].
-:- type alpha_t ---> any ; [[]] ; [any]. %to_unk4_t(any) ; [] ; [any].
+
+:- type alpha_t ---> any ; [[]] ; [any]. 
+:- type delta_t.
 
 :- trust_pred atomic(unk0_t).
 :- trust_pred atom(unk3_t).
@@ -44,7 +48,7 @@ try(_inpexpr, _anslist) :-
 % Examples of applicative functions which can be compiled & executed.
 % This test version compiles them just before each execution.
 
-:- pred t_def(unk1_t, any, unk0_t).
+:- pred t_def(unk1_t, list(unk0_t), unk0_t).
 
 % Factorial function:
 t_def(fac, [N], cond(N=0, 1, N*fac(N-1))).
@@ -196,13 +200,13 @@ relop('=:=', i(A), i(B)) :- A=:=B.
 
 % Translate an expression to combinator form
 % by abstracting out all variables in _argvars:
-:- pred t(any, unk0_t, unk3_t).
+:- pred t(list(unk0_t), unk0_t, unk3_t).
 t(_argvars, _expr, _trans) :-
 	listify(_expr, _list),
 	curry(_list, _curry),
 	t_argvars(_argvars, _curry, to_unk0_t(_trans)), !.
 
-:- pred t_argvars(any, unk0_t, unk0_t).
+:- pred t_argvars(list(unk0_t), unk0_t, unk0_t).
 t_argvars([], _trans, _trans).
 t_argvars([_x|_argvars], _in, _trans) :-
 	t_argvars(_argvars, _in, _mid),
@@ -223,7 +227,7 @@ curry([_func|_args], _cargs) :-
 	currylist(_args, _cargs, _func).
 
 % Transform [_a1, ..., _aN] to [_cN, ..., _c1|_link]-_link
-:- pred currylist(any, unk0_t, unk0_t).
+:- pred currylist(list(unk0_t), unk0_t, unk0_t).
 currylist([], _link, _link) :- !.
 currylist([_a|_args], _cargs, _link) :-
 	curry(_a, _c),
@@ -266,7 +270,7 @@ t_trans(_x, [_g|[_f|_e]], [_vefg,_sg,_sef], _res) :-
 	t_rule2(_x, _e, _f, _vf, _sf, _g, _vg, _sg, _res).
 
 % First complex rule of translation scheme T:
-:- pred t_rule1(unk0_t, unk3_t, any, alpha_t, unk0_t, any, alpha_t, unk0_t).
+:- pred t_rule1(unk0_t, unk3_t, list(unk0_t), alpha_t, unk0_t, list(unk0_t), alpha_t, unk0_t).
 t_rule1(_x, _e, _ve, _se, _f, _vf, _sf, to_unk0_t(_e)) :-
 	notinv(_x, _ve), _x==_f, !.
 t_rule1(_x, _e, _ve, _se, _f, _vf, _sf, [_resf,_e|b]) :-
@@ -282,7 +286,7 @@ t_rule1(_x, _e, _ve, _se, _f, _vf, _sf, [_resf,_rese|s]) :-
 	t_trans(_x, _f, _sf, _resf).
 
 % Second complex rule of translation scheme T:
-:- pred t_rule2(unk0_t, any, unk0_t, any, alpha_t, unk0_t, any, alpha_t, unk0_t).
+:- pred t_rule2(unk0_t, any, unk0_t, list(unk0_t), alpha_t, unk0_t, list(unk0_t), alpha_t, unk0_t).
 t_rule2(_x, _e, _f, _vf, _sf, _g, _vg, _sg, [_g,_e|c]) :-
 	_x==_f, notinv(_x, _vg), !.
 t_rule2(_x, _e, _f, _vf, _sf, _g, _vg, _sg, [_resg,_e|s]) :-
@@ -317,7 +321,7 @@ listify(_Expr, [_Op|_LArgs]) :-
 	functor(_Expr, _Op, N),
 	listify_list(1, N, _Expr, _LArgs).
 
-:- pred listify_list(integer, integer, unk0_t, any).
+:- pred listify_list(integer, integer, unk0_t, list(unk0_t)).
 listify_list(I, N, _, []) :- I>N, !.
 listify_list(I, N, _Expr, [_LA|_LArgs]) :- I=<N, !,
 	arg(I, _Expr, _A),
@@ -333,98 +337,98 @@ listify_list(I, N, _Expr, [_LA|_LArgs]) :- I=<N, !,
 % Predicates with 'v' suffix work with sets containing uninstantiated vars.
 
 % *** Intersection
-:- pred intersectv(any, any, any).
+:- pred intersectv(list(unk0_t), list(unk0_t), list(unk0_t)).
 intersectv([], _, []).
 intersectv([A|S1], S2, S) :- intersectv_2(S2, A, S1, S).
 
-:- pred intersectv_2(any, any, any, any).
+:- pred intersectv_2(list(unk0_t), unk0_t, list(unk0_t), list(unk0_t)).
 intersectv_2([], _, _, []).
 intersectv_2([B|S2], A, S1, S) :-
         compare(Order, A, B),
         intersectv_3(Order, A, S1, B, S2, S).
 
-:- pred intersectv_3(cmp, any, any, any, any, any).
+:- pred intersectv_3(cmp, unk0_t, list(unk0_t), unk0_t, list(unk0_t), list(unk0_t)).
 intersectv_3(<, _, S1, B, S2,     S) :- intersectv_2(S1, B, S2, S).
 intersectv_3(=, A, S1, _, S2, [A|S]) :- intersectv(S1, S2, S).
 intersectv_3(>, A, S1, _, S2,     S) :- intersectv_2(S2, A, S1, S).
 
-:- pred intersectv_list(any, any).
+:- pred intersectv_list(list(list(delta_t)), list(any)).
 intersectv_list([], []).
 intersectv_list([InS|Sets], OutS) :- intersectv_list(Sets, InS, OutS).
 
-:- pred intersectv_list(any, any, any).
+:- pred intersectv_list(list(list(delta_t)), list(delta_t), list(any)).
 intersectv_list([]) --> [].
 intersectv_list([S|Sets]) --> intersectv(S), intersectv_list(Sets).
 
 % *** Difference
-:- pred diffv(any, any, any).
+:- pred diffv(list(unk0_t), list(unk0_t), list(unk0_t)).
 diffv([], _, []).
 diffv([A|S1], S2, S) :- diffv_2(S2, A, S1, S).
 
-:- pred diffv_2(any, any, any, any).
+:- pred diffv_2(list(unk0_t), unk0_t, list(unk0_t), list(unk0_t)).
 diffv_2([], A, S1, [A|S1]).
 diffv_2([B|S2], A, S1, S) :-
         compare(Order, A, B),
         diffv_3(Order, A, S1, B, S2, S).
  
-:- pred diffv_3(cmp, any, any, any, any, any).
+:- pred diffv_3(cmp, unk0_t, list(unk0_t), unk0_t, list(unk0_t), list(unk0_t)).
 diffv_3(<, A, S1, B, S2, [A|S]) :- diffv(S1, [B|S2], S).
 diffv_3(=, _A, S1, _, S2,     S) :- diffv(S1, S2, S).
 diffv_3(>, A, S1, _, S2,     S) :- diffv_2(S2, A, S1, S).
  
 % *** Union
-:- pred unionv(any, any, any).
+:- pred unionv(list(unk0_t), list(unk0_t), list(unk0_t)).
 unionv([], S2, S2).
 unionv([A|S1], S2, S) :- unionv_2(S2, A, S1, S).
 
-:- pred unionv_2(any, any, any, any).
+:- pred unionv_2(list(unk0_t), unk0_t, list(unk0_t), list(unk0_t)).
 unionv_2([], A, S1, [A|S1]).
 unionv_2([B|S2], A, S1, S) :-
         compare(Order, A, B),
         unionv_3(Order, A, S1, B, S2, S).
 
-:- pred unionv_3(cmp, any, any, any, any, any).
+:- pred unionv_3(cmp, unk0_t, list(unk0_t), unk0_t, list(unk0_t), list(unk0_t)).
 unionv_3(<, A, S1, B, S2, [A|S]) :- unionv_2(S1, B, S2, S).
 unionv_3(=, A, S1, _, S2, [A|S]) :- unionv(S1, S2, S).
 unionv_3(>, A, S1, B, S2, [B|S]) :- unionv_2(S2, A, S1, S).
  
 % *** Subset
-:- pred subsetv(any, any).
+:- pred subsetv(list(unk0_t), list(unk0_t)).
 subsetv([], _).
 subsetv([A|S1], [B|S2]) :-
         compare(Order, A, B),
         subsetv_2(Order, A, S1, S2).
 
-:- pred subsetv_2(cmp, any, any, any).
+:- pred subsetv_2(cmp, unk0_t, list(unk0_t), list(unk0_t)).
 subsetv_2(=, _, S1, S2) :- subsetv(S1, S2).
 subsetv_2(>, A, S1, S2) :- subsetv([A|S1], S2).
  
 % For unordered lists S1:
-:- pred small_subsetv(any, any).
+:- pred small_subsetv(list(unk0_t), list(unk0_t)).
 small_subsetv([], _).
 small_subsetv([A|S1], S2) :- inv(A, S2), small_subsetv(S1, S2).
  
 % *** Membership
-:- pred inv(unk0_t, any).
+:- pred inv(unk0_t, list(unk0_t)).
 inv(A, [B|S]) :-
         compare(Order, A, B),
         inv_2(Order, A, S).
 
-:- pred inv_2(cmp, unk0_t, any).
+:- pred inv_2(cmp, unk0_t, list(unk0_t)).
 inv_2(=, _, _).
 inv_2(>, A, S) :- inv(A, S).
 
 % *** Non-membership
-:- pred notinv(unk0_t, any).
+:- pred notinv(unk0_t, list(unk0_t)).
 notinv(A, S) :- notinv_2(S, A).
 
-:- pred notinv_2(any, unk0_t).
+:- pred notinv_2(list(unk0_t), unk0_t).
 notinv_2([], _).
 notinv_2([B|S], A) :-
         compare(Order, A, B),
         notinv_3(Order, A, S).
 
-:- pred notinv_3(cmp, unk0_t, any).
+:- pred notinv_3(cmp, unk0_t, list(unk0_t)).
 notinv_3(<, _, _).
 notinv_3(>, A, S) :- notinv_2(S, A).
 
