@@ -21,7 +21,7 @@
 :- type unk2 ---> [] ; [unk2 | unk2] ; [unk | list(unk2)] ; [unk2 | list(unk2)] ; to_unk2(list(unk)) ; to_unk2(list(any)).
 
 :- trust_pred length(list(_), integer).
-:- trust_pred append(unk2,unk2,unk2). %:- trust_pred append(list(T),list(T),list(T)).
+:- trust_pred append(unk2, unk2, unk2).
 :- trust_pred atom(_).
 
 :- pred data(empty).
@@ -77,7 +77,7 @@ split(N,[X|Xs],RemovedElt,[X|Ys]) :-
     N1 is N - 1,
     split(N1,Xs,RemovedElt,Ys).
 
-:- pred investigate(list(list(pattern)), list(list(any))).
+:- pred investigate(list(list(pattern)), list(unk2)).
 investigate([],_) :- !.
 investigate([U|Units],Patterns) :-
     property(U,pattern,Data),
@@ -103,13 +103,13 @@ property([Prop|_],P,Val) :-
 property([_|RProps],P,Val) :-
     property(RProps,P,Val).
 
-:- pred p_investigate(list(list(unk)), list(list(any))).
+:- pred p_investigate(list(list(unk)), list(unk2)).
 p_investigate([],_).
 p_investigate([D|Data],Patterns) :-
     p_match(Patterns,D),
     p_investigate(Data,Patterns).
 
-:- pred p_match(list(list(any)), list(unk)).
+:- pred p_match(list(unk2), list(unk)).
 p_match([],_).
 p_match([P|Patterns],D) :-
     (match(to_unk2(D),to_unk2(P)),fail; true),
@@ -127,4 +127,3 @@ match(List,[Y|Rest]) :-
 match([X|PRest],[Y|SRest]) :-
     (atom(X) -> X = Y; match(X,Y)),
     match(PRest,SRest).
-
